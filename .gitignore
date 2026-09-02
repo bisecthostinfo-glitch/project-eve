@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+config.json
+Data/*.db
+Data/*.jsonl
+token.json
+credentials.json
