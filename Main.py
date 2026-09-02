@@ -3,7 +3,9 @@ from Config import LoadConfig
 from Logger import ActionLogger
 from AgentLoop import AgentLoop
 from Tools.CalendarLookup import CalendarLookup
+from Tools.CalendarCreateEvent import CalendarCreateEvent
 from Tools.FileSearch import FileSearch
+from Tools.FileManager import FileManager
 from Providers.AnthropicProvider import AnthropicProvider
 from Providers.OllamaProvider import OllamaProvider
 
@@ -31,9 +33,15 @@ def BuildToolRegistry(ConfigDict):
     if ConfigDict["ToolFlags"].get("CalendarLookup"):
         Registry["CalendarLookup"] = CalendarLookup()
 
+    if ConfigDict["ToolFlags"].get("CalendarCreateEvent"):
+        Registry["CalendarCreateEvent"] = CalendarCreateEvent()
+
     if ConfigDict["ToolFlags"].get("FileSearch"):
         SearchTool = FileSearch(ConfigDict["FileIndexPath"], ConfigDict["ScopedDirectories"])
         Registry["FileSearch"] = SearchTool
+
+    if ConfigDict["ToolFlags"].get("FileManager"):
+        Registry["FileManager"] = FileManager(ConfigDict["ScopedDirectories"])
 
     return Registry
 

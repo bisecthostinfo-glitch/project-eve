@@ -25,7 +25,6 @@ class CalendarLookup(BaseTool):
                 "required": ["StartDate", "EndDate"],
             },
         }
-
     def Execute(self, StartDate, EndDate, Query=None):
         if self.CalendarService is None:
             return ToolResult(

@@ -45,7 +45,9 @@ class FileSearch(BaseTool):
                     except OSError:
                         continue
                     Content = ""
-                    if FileName.lower().endswith((".txt", ".md", ".py", ".json", ".csv")):
+                    if FileName.lower().endswith(
+                        (".txt", ".md", ".py", ".json", ".csv", ".log", ".yaml", ".yml", ".ini", ".xml")
+                    ):
                         try:
                             with open(FullPath, "r", errors="ignore") as OpenFile:
                                 Content = OpenFile.read()[:20000]

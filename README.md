@@ -7,23 +7,31 @@ Guardrails are minimal by design: no content filtering, but confirmation is
 required before delete, send, purchase, download, or any irreversible
 action. Every tool call is logged.
 
-## Status: Milestone 1 — text prototype + bounded loop
+## Status: Milestone 2 — write actions
 
-Implemented:
-- `AgentLoop.py` — bounded agentic loop, hard cap of 5 tool calls per
-  request, stops and reports on tool failure instead of retrying with a
-  different tool, logs every step, confirmation checkpoints for
-  destructive tools fire mid-chain.
-- `Tools/CalendarLookup.py` — Google Calendar read (OAuth wiring pending,
-  Milestone 3).
-- `Tools/FileSearch.py` — local SQLite FTS index over scoped directories.
-- `Config.py` — central config: scoped directories, per-tool enable
-  flags, tool-call cap.
-- `Logger.py` — JSONL action log, powers "what did you just do".
+Implemented (Milestone 1 +):
+- `Tools/CalendarCreateEvent.py` — creates Google Calendar events (OAuth
+  wiring still pending, Milestone 3). `IsDestructive = True`, so the loop's
+  confirmation checkpoint fires before it runs.
+- `Tools/FileManager.py` — Move / Rename / Delete / Extract, scoped to
+  `ScopedDirectories` from config. Extracts .zip natively, .7z via `py7zr`,
+  .rar via `rarfile` (needs `unrar`/`UnRAR.exe` on PATH — see note below).
+  `IsDestructive = True`.
+- `FileSearch` content indexing expanded beyond filenames to
+  .log/.yaml/.yml/.ini/.xml in addition to .txt/.md/.py/.json/.csv.
 
-Not yet built (see roadmap below): write actions, Google Workspace beyond
-Calendar, SystemControl, DownloadManager, AutoWriting, Discord, persistent
-memory, voice I/O, wake word + speaker ID, reliability pass.
+## Building a standalone .exe
+
+Run `BuildExe.ps1` — it installs PyInstaller and packages `Main.py` into
+`dist\PersonalAssistant.exe`. Config, `.env`, and any OAuth tokens are
+**not** bundled (deliberately — they're per-user secrets); keep them in
+the same folder as the exe, or set the equivalent environment variables
+before running it.
+
+`.rar` extraction needs the real `unrar` binary on PATH, separate from the
+`rarfile` Python package — on Windows, grab `UnRAR.exe` from
+rarlab.com/rar_add.htm and put it next to the exe or add it to PATH. If
+it's missing, `FileManager` reports a clear error instead of failing silently.
 
 ## Setup
 
@@ -64,8 +72,8 @@ customize before Milestone 3 adds a proper setup flow.
 
 ## Roadmap
 
-1. Text prototype + bounded loop — **current**
-2. Write actions: CalendarCreateEvent, FileManager, confirmation + logging pattern
+1. Text prototype + bounded loop — done
+2. Write actions: CalendarCreateEvent, FileManager, confirmation + logging pattern — **current**
 3. Google Workspace: DriveSearch, SheetsAccess, GmailAccess, PhotosSearch, GoogleXFileDedup, unified search
 4. SystemControl
 5. DownloadManager + AutoWriting

@@ -1,5 +1,11 @@
 import os
+import sys
 import json
+
+if getattr(sys, "frozen", False):
+    AppDir = os.path.dirname(sys.executable)
+else:
+    AppDir = os.path.dirname(__file__)
 
 DefaultConfig = {
     "ScopedDirectories": [
@@ -8,9 +14,9 @@ DefaultConfig = {
     ],
     "ToolFlags": {
         "CalendarLookup": True,
-        "CalendarCreateEvent": False,
+        "CalendarCreateEvent": True,
         "FileSearch": True,
-        "FileManager": False,
+        "FileManager": True,
         "DriveSearch": False,
         "SheetsAccess": False,
         "GmailAccess": False,
@@ -21,15 +27,15 @@ DefaultConfig = {
         "AutoWriting": False,
     },
     "MaxToolCallsPerRequest": 5,
-    "FileIndexPath": os.path.join(os.path.dirname(__file__), "Data", "FileIndex.db"),
-    "ActionLogPath": os.path.join(os.path.dirname(__file__), "Data", "ActionLog.jsonl"),
+    "FileIndexPath": os.path.join(AppDir, "Data", "FileIndex.db"),
+    "ActionLogPath": os.path.join(AppDir, "Data", "ActionLog.jsonl"),
     "LlmProvider": "anthropic",  # "anthropic" or "ollama"
     "AnthropicModel": "claude-sonnet-4-6",
     "OllamaModel": "qwen2.5:7b",
     "OllamaBaseUrl": "http://localhost:11434/v1",
 }
 
-ConfigPath = os.path.join(os.path.dirname(__file__), "config.json")
+ConfigPath = os.path.join(AppDir, "config.json")
 
 
 def LoadConfig():
