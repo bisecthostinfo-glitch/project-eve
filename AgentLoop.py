@@ -1,11 +1,9 @@
-import anthropic
 from Tools.BaseTool import RequestConfirmation
 
 
 class AgentLoop:
-    def __init__(self, ApiKey, Model, ToolRegistry, ActionLogger, MaxToolCalls=5):
-        self.Client = anthropic.Anthropic(api_key=ApiKey)
-        self.Model = Model
+    def __init__(self, Provider, ToolRegistry, ActionLogger, MaxToolCalls=5):
+        self.Provider = Provider
         self.ToolRegistry = ToolRegistry  # dict: ToolName -> ToolInstance
         self.ActionLogger = ActionLogger
         self.MaxToolCalls = MaxToolCalls
@@ -39,33 +37,23 @@ class AgentLoop:
 
     def HandleRequest(self, UserMessage, ConversationHistory=None):
         Messages = list(ConversationHistory) if ConversationHistory else []
-        Messages.append({"role": "user", "content": UserMessage})
+        Messages.append({"role": "user", "content": [{"type": "text", "text": UserMessage}]})
 
         ToolCallCount = 0
         StepLog = []
 
         while True:
-            Response = self.Client.messages.create(
-                model=self.Model,
-                max_tokens=1024,
-                system=self.SystemPrompt,
-                tools=self.GetToolSchemas(),
-                messages=Messages,
-            )
+            ToolSchemas = self.GetToolSchemas()
+            ResponseBlocks = self.Provider.CreateMessage(self.SystemPrompt, Messages, ToolSchemas)
+            Messages.append({"role": "assistant", "content": ResponseBlocks})
 
-            Messages.append({"role": "assistant", "content": Response.content})
-
-            ToolUseBlocks = [Block for Block in Response.content if Block.type == "tool_use"]
+            ToolUseBlocks = [Block for Block in ResponseBlocks if Block["type"] == "tool_use"]
 
             if not ToolUseBlocks:
                 FinalText = "".join(
-                    Block.text for Block in Response.content if Block.type == "text"
+                    Block["text"] for Block in ResponseBlocks if Block["type"] == "text"
                 )
-                return {
-                    "FinalResponse": FinalText,
-                    "StepLog": StepLog,
-                    "Messages": Messages,
-                }
+                return {"FinalResponse": FinalText, "StepLog": StepLog, "Messages": Messages}
 
             if ToolCallCount >= self.MaxToolCalls:
                 return {
@@ -77,20 +65,20 @@ class AgentLoop:
                     "Messages": Messages,
                 }
 
-            ToolResultsContent = []
+            ToolResultBlocks = []
             StopDueToFailure = False
 
             for Block in ToolUseBlocks:
                 if ToolCallCount >= self.MaxToolCalls:
                     break
                 ToolCallCount += 1
-                ResultDict = self.RunTool(Block.name, Block.input)
-                StepLog.append({"Tool": Block.name, "Arguments": Block.input, "Result": ResultDict})
+                ResultDict = self.RunTool(Block["name"], Block["input"])
+                StepLog.append({"Tool": Block["name"], "Arguments": Block["input"], "Result": ResultDict})
 
-                ToolResultsContent.append(
+                ToolResultBlocks.append(
                     {
                         "type": "tool_result",
-                        "tool_use_id": Block.id,
+                        "tool_use_id": Block["id"],
                         "content": str(ResultDict),
                         "is_error": not ResultDict.get("Success", False),
                     }
@@ -99,17 +87,16 @@ class AgentLoop:
                 if not ResultDict.get("Success", False):
                     StopDueToFailure = True
 
-            Messages.append({"role": "user", "content": ToolResultsContent})
+            Messages.append({"role": "user", "content": ToolResultBlocks})
 
             if StopDueToFailure:
-                Response = self.Client.messages.create(
-                    model=self.Model,
-                    max_tokens=1024,
-                    system=self.SystemPrompt
-                    + " A tool call just failed. Report the failure plainly, do not retry.",
-                    tools=self.GetToolSchemas(),
-                    messages=Messages,
+                FailureSystemPrompt = (
+                    self.SystemPrompt
+                    + " A tool call just failed. Report the failure plainly, do not retry."
                 )
-                FinalText = "".join(Block.text for Block in Response.content if Block.type == "text")
-                Messages.append({"role": "assistant", "content": Response.content})
+                ResponseBlocks = self.Provider.CreateMessage(FailureSystemPrompt, Messages, ToolSchemas)
+                Messages.append({"role": "assistant", "content": ResponseBlocks})
+                FinalText = "".join(
+                    Block["text"] for Block in ResponseBlocks if Block["type"] == "text"
+                )
                 return {"FinalResponse": FinalText, "StepLog": StepLog, "Messages": Messages}

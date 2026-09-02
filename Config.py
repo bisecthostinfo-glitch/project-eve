@@ -23,7 +23,10 @@ DefaultConfig = {
     "MaxToolCallsPerRequest": 5,
     "FileIndexPath": os.path.join(os.path.dirname(__file__), "Data", "FileIndex.db"),
     "ActionLogPath": os.path.join(os.path.dirname(__file__), "Data", "ActionLog.jsonl"),
+    "LlmProvider": "anthropic",  # "anthropic" or "ollama"
     "AnthropicModel": "claude-sonnet-4-6",
+    "OllamaModel": "qwen2.5:7b",
+    "OllamaBaseUrl": "http://localhost:11434/v1",
 }
 
 ConfigPath = os.path.join(os.path.dirname(__file__), "config.json")

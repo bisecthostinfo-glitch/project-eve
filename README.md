@@ -27,12 +27,36 @@ memory, voice I/O, wake word + speaker ID, reliability pass.
 
 ## Setup
 
+### Option A — Claude (Anthropic API)
+
 ```
 pip install -r requirements.txt
 cp .env.example .env   # fill in your own key, then export it
 export ANTHROPIC_API_KEY=...
 python Main.py
 ```
+
+### Option B — Local model via Ollama
+
+Windows: run `SetupOllama.ps1` (installs Ollama via winget, pulls
+`qwen2.5:7b`, verifies the server is up). macOS/Linux: install Ollama from
+ollama.com, then `ollama pull qwen2.5:7b`.
+
+```
+pip install -r requirements.txt
+set LLM_PROVIDER=ollama          # PowerShell: $env:LLM_PROVIDER = "ollama"
+python Main.py
+```
+
+Or set `"LlmProvider": "ollama"` in `config.json` instead of using the env
+var. `LLM_PROVIDER` / `OLLAMA_MODEL` / `OLLAMA_BASE_URL` env vars override
+`config.json` if both are set.
+
+The LLM backend is abstracted in `Providers/` (`AnthropicProvider.py`,
+`OllamaProvider.py`) behind a normalized message-block format, so
+`AgentLoop.py` doesn't care which one is active. Tool-calling reliability
+varies a lot across local models — worth testing your actual tool chains
+(2-3 step requests) before committing to one for daily use.
 
 `config.json` (gitignored) overrides `Config.DefaultConfig` — copy the
 `ScopedDirectories` / `ToolFlags` shape from `Config.py` if you want to
