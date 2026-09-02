@@ -20,7 +20,10 @@ DefaultConfig = {
         "DriveSearch": False,
         "SheetsAccess": False,
         "GmailAccess": False,
-        "PhotosSearch": False,
+        "PhotosSearch": False,  # blocked: Google Photos Library API no longer
+        # supports browsing an existing library (locked down March 2025).
+        # Needs the interactive Picker API instead — not a fit for a
+        # headless tool call. See README.
         "SystemControl": False,
         "DownloadManager": False,
         "DiscordSearch": False,
@@ -33,6 +36,12 @@ DefaultConfig = {
     "AnthropicModel": "claude-sonnet-4-6",
     "OllamaModel": "qwen2.5:7b",
     "OllamaBaseUrl": "http://localhost:11434/v1",
+    "SystemPrompt": (
+        "You are a personal assistant with access to a bounded set of tools. "
+        "You may call at most a limited number of tools per user request. "
+        "If a tool call fails, stop and report the failure instead of trying "
+        "another tool on your own. Be direct and concise."
+    ),
 }
 
 ConfigPath = os.path.join(AppDir, "config.json")

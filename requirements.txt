@@ -3,5 +3,6 @@ openai>=1.40.0
 google-api-python-client>=2.140.0
 google-auth-oauthlib>=1.2.0
 google-auth>=2.34.0
+cryptography>=43.0.0
 py7zr>=0.21.0
 rarfile>=4.2

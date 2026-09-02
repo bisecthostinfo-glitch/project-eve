@@ -2,12 +2,12 @@ from Tools.BaseTool import RequestConfirmation
 
 
 class AgentLoop:
-    def __init__(self, Provider, ToolRegistry, ActionLogger, MaxToolCalls=5):
+    def __init__(self, Provider, ToolRegistry, ActionLogger, MaxToolCalls=5, SystemPrompt=None):
         self.Provider = Provider
         self.ToolRegistry = ToolRegistry  # dict: ToolName -> ToolInstance
         self.ActionLogger = ActionLogger
         self.MaxToolCalls = MaxToolCalls
-        self.SystemPrompt = (
+        self.SystemPrompt = SystemPrompt or (
             "You are a personal assistant with access to a bounded set of tools. "
             "You may call at most a limited number of tools per user request. "
             "If a tool call fails, stop and report the failure instead of trying "
