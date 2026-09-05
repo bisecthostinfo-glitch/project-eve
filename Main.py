@@ -64,6 +64,7 @@ def Main():
         ToolRegistry=ToolRegistry,
         ActionLogger=ActionLoggerInstance,
         MaxToolCalls=ConfigDict["MaxToolCallsPerRequest"],
+        SystemPrompt=ConfigDict["SystemPrompt"],
     )
 
     print("Personal Assistant (Milestone 1 — text mode). Type 'exit' to quit.")
@@ -78,9 +79,14 @@ def Main():
             print(f"Assistant: {LastAction}")
             continue
 
-        Result = Loop.HandleRequest(UserInput, ConversationHistory)
+        try:
+            Result = Loop.HandleRequest(UserInput, ConversationHistory)
+        except Exception as ErrorObject:
+            print(f"Assistant: Something went wrong talking to the model — {ErrorObject}")
+            continue
+
         ConversationHistory = Result["Messages"]
-        print(f"Assistant: {Result['FinalResponse']}")
+        print(f"Assistant: {Result['FinalResponse'] or '(no response text — check StepLog / logs)'}")
 
 
 if __name__ == "__main__":

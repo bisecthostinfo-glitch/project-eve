@@ -33,6 +33,12 @@ DefaultConfig = {
     "AnthropicModel": "claude-sonnet-4-6",
     "OllamaModel": "qwen2.5:7b",
     "OllamaBaseUrl": "http://localhost:11434/v1",
+    "SystemPrompt": (
+        "You are a personal assistant with access to a bounded set of tools. "
+        "You may call at most a limited number of tools per user request. "
+        "If a tool call fails, stop and report the failure instead of trying "
+        "another tool on your own. Be direct and concise."
+    ),
 }
 
 ConfigPath = os.path.join(AppDir, "config.json")
