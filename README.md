@@ -7,6 +7,25 @@ Guardrails are minimal by design: no content filtering, but confirmation is
 required before delete, send, purchase, download, or any irreversible
 action. Every tool call is logged.
 
+## Status: Real app launcher — setup wizard + windowed exe
+
+`Gui.py` is now the actual entry point/launcher, not just a chat window:
+- On first run (no `config.json`, or Claude selected with no API key
+  stored), it shows a `SetupWizard` — pick Claude or Ollama, paste an API
+  key if using Claude. Saved encrypted via `SecretsStore.py` (same Fernet
+  pattern as the Google OAuth token), so the key never sits in plaintext.
+- After that, it goes straight to the chat window every time.
+- `BuildExe.ps1` now packages `Gui.py` with `--windowed` (no console
+  popup) as `PersonalAssistant.exe` — double-click it, that's the app.
+
+`SecretsStore.py` is a small generic encrypted key-value store — `Get`/
+`Set`/`Has` on any string key, backed by `Data/secrets.enc` +
+`Data/secrets.key` (both gitignored). `ANTHROPIC_API_KEY` env var still
+overrides it if set, for anyone who wants to run headless/scripted.
+
+`Main.py` (the old text-only CLI) still works standalone if you want it,
+but `Gui.py` is the one meant for actually launching the app now.
+
 ## Status: Core interface — GUI + voice (STT/TTS), ahead of the milestone order
 
 Priorities got reordered on request: interface + voice came before finishing
@@ -62,6 +81,20 @@ rarlab.com/rar_add.htm and put it next to the exe or add it to PATH. If
 it's missing, `FileManager` reports a clear error instead of failing silently.
 
 ## Setup
+
+### Recommended — the app launcher
+
+```
+pip install -r requirements.txt
+python Gui.py
+```
+
+First run shows a setup screen: pick Claude or Ollama, paste your API key
+if using Claude. Everything after that just opens the chat window
+directly. This is also what `BuildExe.ps1` packages into
+`PersonalAssistant.exe`.
+
+### Manual / scripted — text-only CLI
 
 ### Option A — Claude (Anthropic API)
 

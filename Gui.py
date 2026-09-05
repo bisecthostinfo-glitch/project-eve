@@ -10,6 +10,7 @@ from Main import BuildProvider, BuildToolRegistry
 from AudioRecorder import AudioRecorder
 from SpeechToText import SpeechToText
 from TextToSpeech import TextToSpeech
+from SetupWizard import SetupWizard, NeedsSetup
 
 
 class AssistantGui:
@@ -166,7 +167,17 @@ class AssistantGui:
 
 def Main():
     Root = tk.Tk()
-    AssistantGui(Root)
+    Root.withdraw()  # hide the main window until setup (if needed) is done
+
+    def LaunchAssistant():
+        Root.deiconify()
+        AssistantGui(Root)
+
+    if NeedsSetup():
+        SetupWizard(Root, OnComplete=LaunchAssistant)
+    else:
+        LaunchAssistant()
+
     Root.mainloop()
 
 
