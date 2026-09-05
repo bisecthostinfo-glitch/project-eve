@@ -10,11 +10,11 @@ action. Every tool call is logged.
 ## Status: In-app Settings + fixed network map
 
 - `SettingsWindow.py` — gear icon in the main window opens it. Toggle
-  voice input and AI voice output separately (voice changes need a
-  restart, shown in-window), edit the system prompt live (applies
-  immediately, no restart), and set an activation phrase — reserved for
-  future wake-word support, not wired to a listener yet, doesn't affect
-  push-to-talk.
+  voice input and AI voice output separately — saving a voice change
+  **automatically restarts the app** to apply it (no manual step). Edit
+  the system prompt — applies live, no restart. Set an activation phrase
+  — reserved for future wake-word support, not wired to a listener yet,
+  doesn't affect push-to-talk.
 - `NetworkMap.py` rebuilt: tool names were overflowing their circles
   (`CalendarCreateEvent` wrapping into 3 lines). Now each tool is a small
   dot with its label beside it instead of text crammed inside a circle —
@@ -80,8 +80,8 @@ to focus here first). Implemented:
 
 To enable voice: run `SetupPiper.ps1` once, then open Settings in the app
 (gear icon, bottom right) and turn on "voice input" and/or "AI voice
-output". Restart the app after saving — voice setup happens at startup.
-"Hold to Talk" appears once voice input is on.
+output". Saving restarts the app automatically. "Hold to Talk" appears
+once voice input is on.
 
 Milestone 2 (write actions) below is still complete and unaffected by this
 reordering.

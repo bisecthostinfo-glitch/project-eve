@@ -1,8 +1,15 @@
+import os
+import sys
 import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
 
 from Config import LoadConfig, SaveConfig
+
+
+def RestartApplication():
+    PythonExecutable = sys.executable
+    os.execv(PythonExecutable, [PythonExecutable] + sys.argv)
 
 
 class SettingsWindow(ctk.CTkToplevel):
@@ -38,7 +45,7 @@ class SettingsWindow(ctk.CTkToplevel):
         ).pack(anchor="w", padx=14, pady=(4, 6))
 
         ctk.CTkLabel(
-            VoiceFrame, text="Changes to voice settings need an app restart to take effect.",
+            VoiceFrame, text="Saving a change here restarts the app automatically to apply it.",
             font=("Segoe UI", 10), text_color="#8a8f9e", anchor="w", justify="left",
         ).pack(anchor="w", padx=14, pady=(0, 14))
 
@@ -98,9 +105,10 @@ class SettingsWindow(ctk.CTkToplevel):
         VoiceChanged = (
             NewVoiceInput != self.OriginalVoiceInput or NewVoiceOutput != self.OriginalVoiceOutput
         )
+
         if VoiceChanged:
-            messagebox.showinfo("Saved", "Saved. Restart the app for the voice changes to take effect.")
+            self.destroy()
+            RestartApplication()
         else:
             messagebox.showinfo("Saved", "Settings saved.")
-
-        self.destroy()
+            self.destroy()
