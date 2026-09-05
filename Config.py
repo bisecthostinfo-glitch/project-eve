@@ -39,7 +39,10 @@ DefaultConfig = {
         "If a tool call fails, stop and report the failure instead of trying "
         "another tool on your own. Be direct and concise."
     ),
-    "VoiceEnabled": False,
+    "VoiceInputEnabled": False,
+    "VoiceOutputEnabled": False,
+    "ActivationPhrase": "hey assistant",  # reserved for future wake-word support
+    # (Milestone 10) — not wired to a listener yet, push-to-talk only for now.
     "WhisperModelSize": "base.en",
     "PiperVoiceModelPath": os.path.join(AppDir, "Data", "PiperVoices", "en_US-lessac-medium.onnx"),
     "PiperVoiceConfigPath": None,

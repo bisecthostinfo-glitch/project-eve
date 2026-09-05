@@ -11,6 +11,7 @@ from AudioRecorder import AudioRecorder
 from SpeechToText import SpeechToText
 from TextToSpeech import TextToSpeech
 from SetupWizard import SetupWizard, NeedsSetup
+from SettingsWindow import SettingsWindow
 from NetworkMap import NetworkMap
 
 ctk.set_appearance_mode("dark")
@@ -50,25 +51,24 @@ class AssistantGui:
         self.BuildLayout()
 
     def SetUpVoice(self):
-        if not self.ConfigDict.get("VoiceEnabled"):
-            return
+        if self.ConfigDict.get("VoiceInputEnabled"):
+            try:
+                self.SpeechToTextInstance = SpeechToText(self.ConfigDict.get("WhisperModelSize", "base.en"))
+                self.Recorder = AudioRecorder()
+            except Exception as ErrorObject:
+                print(f"STT setup failed, voice input disabled: {ErrorObject}")
 
-        try:
-            self.SpeechToTextInstance = SpeechToText(self.ConfigDict.get("WhisperModelSize", "base.en"))
-            self.Recorder = AudioRecorder()
-        except Exception as ErrorObject:
-            print(f"STT setup failed, voice input disabled: {ErrorObject}")
-
-        try:
-            VoiceModelPath = self.ConfigDict.get("PiperVoiceModelPath")
-            if VoiceModelPath and os.path.exists(VoiceModelPath):
-                self.TextToSpeechInstance = TextToSpeech(
-                    VoiceModelPath, self.ConfigDict.get("PiperVoiceConfigPath")
-                )
-            else:
-                print(f"Piper voice model not found at '{VoiceModelPath}'. Run SetupPiper.ps1. TTS disabled.")
-        except Exception as ErrorObject:
-            print(f"TTS setup failed, voice output disabled: {ErrorObject}")
+        if self.ConfigDict.get("VoiceOutputEnabled"):
+            try:
+                VoiceModelPath = self.ConfigDict.get("PiperVoiceModelPath")
+                if VoiceModelPath and os.path.exists(VoiceModelPath):
+                    self.TextToSpeechInstance = TextToSpeech(
+                        VoiceModelPath, self.ConfigDict.get("PiperVoiceConfigPath")
+                    )
+                else:
+                    print(f"Piper voice model not found at '{VoiceModelPath}'. Run SetupPiper.ps1. TTS disabled.")
+            except Exception as ErrorObject:
+                print(f"TTS setup failed, voice output disabled: {ErrorObject}")
 
     def BuildLayout(self):
         self.Root.grid_columnconfigure(0, weight=1)
@@ -117,10 +117,16 @@ class AssistantGui:
 
         self.MuteVar = tk.BooleanVar(value=not bool(self.TextToSpeechInstance))
         MuteSwitch = ctk.CTkSwitch(BottomRow, text="Mute voice", variable=self.MuteVar, onvalue=True, offvalue=False)
-        MuteSwitch.grid(row=0, column=1, sticky="e")
+        MuteSwitch.grid(row=0, column=1, sticky="e", padx=(0, 12))
+
+        SettingsButton = ctk.CTkButton(
+            BottomRow, text="⚙ Settings", width=100, height=28, fg_color="#2a2e3d",
+            hover_color="#3a3f52", command=self.OpenSettings,
+        )
+        SettingsButton.grid(row=0, column=2, sticky="e")
 
         # --- Right: live network map panel ---
-        MapPanel = ctk.CTkFrame(self.Root, width=240, corner_radius=0, fg_color="#0f1117")
+        MapPanel = ctk.CTkFrame(self.Root, width=280, corner_radius=0, fg_color="#0f1117")
         MapPanel.grid(row=0, column=1, sticky="ns")
         MapPanel.grid_propagate(False)
 
@@ -128,7 +134,7 @@ class AssistantGui:
         MapTitle.pack(padx=16, pady=(20, 4), anchor="w")
 
         ToolNames = list(self.ToolRegistry.keys())
-        self.Map = NetworkMap(MapPanel, ToolNames, Width=220, Height=460)
+        self.Map = NetworkMap(MapPanel, ToolNames, Width=260, Height=460)
 
     def AppendChat(self, Speaker, Text):
         Tag = "user" if Speaker == "You" else "assistant"
@@ -145,6 +151,14 @@ class AssistantGui:
         # Called from the background request thread — hop to the main thread for UI updates.
         self.Root.after(0, self.Map.Activate, ToolName)
         self.Root.after(0, self.SetStatus, f"Using {ToolName}...")
+
+    def OpenSettings(self):
+        SettingsWindow(self.Root, OnSystemPromptChanged=self.OnSystemPromptChanged)
+
+    def OnSystemPromptChanged(self, NewSystemPrompt):
+        # Applies immediately — no restart needed, unlike the voice toggles.
+        self.Loop.SystemPrompt = NewSystemPrompt
+        self.ConfigDict["SystemPrompt"] = NewSystemPrompt
 
     def OnSend(self):
         if self.Provider is None:

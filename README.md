@@ -7,6 +7,22 @@ Guardrails are minimal by design: no content filtering, but confirmation is
 required before delete, send, purchase, download, or any irreversible
 action. Every tool call is logged.
 
+## Status: In-app Settings + fixed network map
+
+- `SettingsWindow.py` — gear icon in the main window opens it. Toggle
+  voice input and AI voice output separately (voice changes need a
+  restart, shown in-window), edit the system prompt live (applies
+  immediately, no restart), and set an activation phrase — reserved for
+  future wake-word support, not wired to a listener yet, doesn't affect
+  push-to-talk.
+- `NetworkMap.py` rebuilt: tool names were overflowing their circles
+  (`CalendarCreateEvent` wrapping into 3 lines). Now each tool is a small
+  dot with its label beside it instead of text crammed inside a circle —
+  scales to any tool name length.
+- `Config.py`: `VoiceEnabled` split into `VoiceInputEnabled` /
+  `VoiceOutputEnabled` so mic and speech-out can be toggled independently.
+  Added `ActivationPhrase` (currently just stored, not yet functional).
+
 ## Status: Modern UI + one-click launcher
 
 - Rebuilt `Gui.py` on `customtkinter` — dark theme, rounded buttons/cards,
@@ -62,11 +78,10 @@ to focus here first). Implemented:
 - `SetupPiper.ps1` — installs `piper-tts` and downloads the
   `en_US-lessac-medium` voice model.
 
-To enable voice: run `SetupPiper.ps1` once, set `"VoiceEnabled": true` in
-`config.json`, then run `python Gui.py` instead of `Main.py`. Hold the
-"Hold to Talk" button while speaking, release to transcribe and send.
-Wake-word / phrase-triggered listening (no button) is planned for later —
-this is push-to-talk only for now, by design.
+To enable voice: run `SetupPiper.ps1` once, then open Settings in the app
+(gear icon, bottom right) and turn on "voice input" and/or "AI voice
+output". Restart the app after saving — voice setup happens at startup.
+"Hold to Talk" appears once voice input is on.
 
 Milestone 2 (write actions) below is still complete and unaffected by this
 reordering.
