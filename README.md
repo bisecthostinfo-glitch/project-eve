@@ -7,6 +7,34 @@ Guardrails are minimal by design: no content filtering, but confirmation is
 required before delete, send, purchase, download, or any irreversible
 action. Every tool call is logged.
 
+## Status: Core interface — GUI + voice (STT/TTS), ahead of the milestone order
+
+Priorities got reordered on request: interface + voice came before finishing
+Google Workspace (Milestone 3 was built, then reverted — see git history —
+to focus here first). Implemented:
+
+- `Gui.py` — simple Tkinter window: chat log, text entry, Send button,
+  hold-to-talk button (appears only if voice is enabled and set up
+  correctly), Mute checkbox. Will very likely get replaced/reworked later —
+  built to be functional, not final.
+- `AudioRecorder.py` — push-to-talk recording via `sounddevice`, 16kHz
+  mono float32 for Whisper.
+- `SpeechToText.py` — `faster-whisper` wrapper, `base.en` model by
+  default (downloads automatically on first use).
+- `TextToSpeech.py` — Piper wrapper (local neural TTS, natural-sounding
+  vs. robotic SAPI voices), plays audio directly via `sounddevice`.
+- `SetupPiper.ps1` — installs `piper-tts` and downloads the
+  `en_US-lessac-medium` voice model.
+
+To enable voice: run `SetupPiper.ps1` once, set `"VoiceEnabled": true` in
+`config.json`, then run `python Gui.py` instead of `Main.py`. Hold the
+"Hold to Talk" button while speaking, release to transcribe and send.
+Wake-word / phrase-triggered listening (no button) is planned for later —
+this is push-to-talk only for now, by design.
+
+Milestone 2 (write actions) below is still complete and unaffected by this
+reordering.
+
 ## Status: Milestone 2 — write actions
 
 Implemented (Milestone 1 +):

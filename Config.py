@@ -39,6 +39,10 @@ DefaultConfig = {
         "If a tool call fails, stop and report the failure instead of trying "
         "another tool on your own. Be direct and concise."
     ),
+    "VoiceEnabled": False,
+    "WhisperModelSize": "base.en",
+    "PiperVoiceModelPath": os.path.join(AppDir, "Data", "PiperVoices", "en_US-lessac-medium.onnx"),
+    "PiperVoiceConfigPath": None,
 }
 
 ConfigPath = os.path.join(AppDir, "config.json")

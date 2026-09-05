@@ -4,5 +4,11 @@ __pycache__/
 config.json
 Data/*.db
 Data/*.jsonl
+Data/*.key
+Data/*.enc
+Data/PiperVoices/
 token.json
 credentials.json
+dist/
+build/
+*.spec
