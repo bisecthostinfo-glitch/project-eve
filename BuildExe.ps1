@@ -13,7 +13,8 @@ pyinstaller --onefile --windowed --name PersonalAssistant Gui.py `
     --add-data "Providers;Providers" `
     --collect-all faster_whisper `
     --collect-all piper `
-    --collect-all ctranslate2
+    --collect-all ctranslate2 `
+    --collect-all customtkinter
 
 Write-Host ""
 Write-Host "Done. Find it at dist\PersonalAssistant.exe"

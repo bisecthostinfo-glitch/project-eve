@@ -2,11 +2,12 @@ from Tools.BaseTool import RequestConfirmation
 
 
 class AgentLoop:
-    def __init__(self, Provider, ToolRegistry, ActionLogger, MaxToolCalls=5, SystemPrompt=None):
+    def __init__(self, Provider, ToolRegistry, ActionLogger, MaxToolCalls=5, SystemPrompt=None, OnToolCall=None):
         self.Provider = Provider
         self.ToolRegistry = ToolRegistry  # dict: ToolName -> ToolInstance
         self.ActionLogger = ActionLogger
         self.MaxToolCalls = MaxToolCalls
+        self.OnToolCall = OnToolCall  # optional callable(ToolName) fired right before execution
         self.SystemPrompt = SystemPrompt or (
             "You are a personal assistant with access to a bounded set of tools. "
             "You may call at most a limited number of tools per user request. "
@@ -21,6 +22,12 @@ class AgentLoop:
         Tool = self.ToolRegistry.get(ToolName)
         if Tool is None:
             return {"Success": False, "Error": f"Unknown tool: {ToolName}"}
+
+        if self.OnToolCall:
+            try:
+                self.OnToolCall(ToolName)
+            except Exception:
+                pass  # a UI callback misbehaving should never break the actual tool call
 
         if Tool.IsDestructive:
             Prompt = f"About to run destructive action '{ToolName}' with args {ToolArguments}."

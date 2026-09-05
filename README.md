@@ -7,6 +7,23 @@ Guardrails are minimal by design: no content filtering, but confirmation is
 required before delete, send, purchase, download, or any irreversible
 action. Every tool call is logged.
 
+## Status: Modern UI + one-click launcher
+
+- Rebuilt `Gui.py` on `customtkinter` — dark theme, rounded buttons/cards,
+  proper chat bubbles instead of a plain text box. `SetupWizard.py`
+  matches the same look.
+- Added `NetworkMap.py` — a live node graph on the right side: You → AI →
+  one node per active tool. When the assistant actually calls a tool
+  mid-request, that node and its connecting line light up green in real
+  time (wired through a new `OnToolCall` callback on `AgentLoop`), so you
+  can see what it's doing while it's doing it, not just the final answer.
+- `RunAssistant.bat` — double-click launcher. Installs dependencies on
+  first run only (marked via `Data\.deps_installed`, gitignored), then
+  launches `Gui.py` every time after. This assumes you've already cloned
+  the repo once (private repo, so that first clone still needs your own
+  auth) — this script is for "run it" from that point on, not the
+  from-scratch clone step.
+
 ## Status: Real app launcher — setup wizard + windowed exe
 
 `Gui.py` is now the actual entry point/launcher, not just a chat window:
@@ -83,6 +100,10 @@ it's missing, `FileManager` reports a clear error instead of failing silently.
 ## Setup
 
 ### Recommended — the app launcher
+
+After cloning the repo once, just double-click `RunAssistant.bat` from
+then on — it installs dependencies the first time only, then launches the
+app every time. Manual equivalent:
 
 ```
 pip install -r requirements.txt

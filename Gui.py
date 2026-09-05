@@ -1,7 +1,7 @@
 import os
 import threading
 import tkinter as tk
-from tkinter import scrolledtext
+import customtkinter as ctk
 
 from Config import LoadConfig
 from Logger import ActionLogger
@@ -11,12 +11,18 @@ from AudioRecorder import AudioRecorder
 from SpeechToText import SpeechToText
 from TextToSpeech import TextToSpeech
 from SetupWizard import SetupWizard, NeedsSetup
+from NetworkMap import NetworkMap
+
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
 
 
 class AssistantGui:
     def __init__(self, Root):
         self.Root = Root
         self.Root.title("Personal Assistant")
+        self.Root.geometry("980x640")
+        self.Root.minsize(760, 480)
 
         self.ConfigDict = LoadConfig()
         self.Provider = BuildProvider(self.ConfigDict)
@@ -32,6 +38,7 @@ class AssistantGui:
             ActionLogger=self.ActionLoggerInstance,
             MaxToolCalls=self.ConfigDict["MaxToolCallsPerRequest"],
             SystemPrompt=self.ConfigDict["SystemPrompt"],
+            OnToolCall=self.OnToolCallFromLoop,
         )
         self.ConversationHistory = []
 
@@ -39,7 +46,8 @@ class AssistantGui:
         self.Recorder = None
         self.TextToSpeechInstance = None
         self.SetUpVoice()
-        self.BuildWidgets()
+
+        self.BuildLayout()
 
     def SetUpVoice(self):
         if not self.ConfigDict.get("VoiceEnabled"):
@@ -62,49 +70,87 @@ class AssistantGui:
         except Exception as ErrorObject:
             print(f"TTS setup failed, voice output disabled: {ErrorObject}")
 
-    def BuildWidgets(self):
-        self.ChatLog = scrolledtext.ScrolledText(
-            self.Root, state="disabled", width=80, height=28, wrap="word"
+    def BuildLayout(self):
+        self.Root.grid_columnconfigure(0, weight=1)
+        self.Root.grid_columnconfigure(1, weight=0)
+        self.Root.grid_rowconfigure(0, weight=1)
+
+        # --- Left: chat panel ---
+        ChatPanel = ctk.CTkFrame(self.Root, corner_radius=0)
+        ChatPanel.grid(row=0, column=0, sticky="nsew")
+        ChatPanel.grid_rowconfigure(0, weight=1)
+        ChatPanel.grid_columnconfigure(0, weight=1)
+
+        self.ChatLog = ctk.CTkTextbox(
+            ChatPanel, wrap="word", state="disabled", font=("Segoe UI", 13),
+            fg_color="#161923", corner_radius=12,
         )
-        self.ChatLog.pack(padx=10, pady=10)
+        self.ChatLog.grid(row=0, column=0, sticky="nsew", padx=16, pady=(16, 8))
+        self.ChatLog.tag_config("user", foreground="#9db4ff")
+        self.ChatLog.tag_config("assistant", foreground="#c9cdd8")
 
-        InputFrame = tk.Frame(self.Root)
-        InputFrame.pack(fill="x", padx=10, pady=(0, 5))
+        InputRow = ctk.CTkFrame(ChatPanel, fg_color="transparent")
+        InputRow.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 8))
+        InputRow.grid_columnconfigure(0, weight=1)
 
-        self.InputEntry = tk.Entry(InputFrame)
-        self.InputEntry.pack(side="left", fill="x", expand=True)
+        self.InputEntry = ctk.CTkEntry(
+            InputRow, placeholder_text="Type a message...", height=40, corner_radius=10
+        )
+        self.InputEntry.grid(row=0, column=0, sticky="ew", padx=(0, 8))
         self.InputEntry.bind("<Return>", lambda Event: self.OnSend())
 
-        SendButton = tk.Button(InputFrame, text="Send", command=self.OnSend)
-        SendButton.pack(side="left", padx=(5, 0))
+        SendButton = ctk.CTkButton(InputRow, text="Send", width=80, height=40, command=self.OnSend)
+        SendButton.grid(row=0, column=1, padx=(0, 8))
 
         if self.SpeechToTextInstance:
-            TalkButton = tk.Button(InputFrame, text="Hold to Talk")
-            TalkButton.pack(side="left", padx=(5, 0))
+            TalkButton = ctk.CTkButton(InputRow, text="Hold to Talk", width=120, height=40, fg_color="#3a3f52")
+            TalkButton.grid(row=0, column=2)
             TalkButton.bind("<ButtonPress-1>", self.OnTalkStart)
             TalkButton.bind("<ButtonRelease-1>", self.OnTalkStop)
 
-        self.MuteVar = tk.BooleanVar(value=not bool(self.TextToSpeechInstance))
-        MuteCheck = tk.Checkbutton(InputFrame, text="Mute", variable=self.MuteVar)
-        MuteCheck.pack(side="left", padx=(5, 0))
+        BottomRow = ctk.CTkFrame(ChatPanel, fg_color="transparent")
+        BottomRow.grid(row=2, column=0, sticky="ew", padx=16, pady=(0, 16))
+        BottomRow.grid_columnconfigure(0, weight=1)
 
-        self.StatusLabel = tk.Label(self.Root, text="Ready", anchor="w")
-        self.StatusLabel.pack(fill="x", padx=10, pady=(0, 10))
+        self.StatusLabel = ctk.CTkLabel(BottomRow, text="Ready", text_color="#7f8696", anchor="w")
+        self.StatusLabel.grid(row=0, column=0, sticky="w")
+
+        self.MuteVar = tk.BooleanVar(value=not bool(self.TextToSpeechInstance))
+        MuteSwitch = ctk.CTkSwitch(BottomRow, text="Mute voice", variable=self.MuteVar, onvalue=True, offvalue=False)
+        MuteSwitch.grid(row=0, column=1, sticky="e")
+
+        # --- Right: live network map panel ---
+        MapPanel = ctk.CTkFrame(self.Root, width=240, corner_radius=0, fg_color="#0f1117")
+        MapPanel.grid(row=0, column=1, sticky="ns")
+        MapPanel.grid_propagate(False)
+
+        MapTitle = ctk.CTkLabel(MapPanel, text="Activity", font=("Segoe UI", 13, "bold"), text_color="#9aa0ad")
+        MapTitle.pack(padx=16, pady=(20, 4), anchor="w")
+
+        ToolNames = list(self.ToolRegistry.keys())
+        self.Map = NetworkMap(MapPanel, ToolNames, Width=220, Height=460)
 
     def AppendChat(self, Speaker, Text):
+        Tag = "user" if Speaker == "You" else "assistant"
         self.ChatLog.configure(state="normal")
-        self.ChatLog.insert("end", f"{Speaker}: {Text}\n\n")
+        self.ChatLog.insert("end", f"{Speaker}\n", (Tag,))
+        self.ChatLog.insert("end", f"{Text}\n\n")
         self.ChatLog.configure(state="disabled")
         self.ChatLog.see("end")
 
     def SetStatus(self, Text):
         self.StatusLabel.configure(text=Text)
 
+    def OnToolCallFromLoop(self, ToolName):
+        # Called from the background request thread — hop to the main thread for UI updates.
+        self.Root.after(0, self.Map.Activate, ToolName)
+        self.Root.after(0, self.SetStatus, f"Using {ToolName}...")
+
     def OnSend(self):
         if self.Provider is None:
             self.AppendChat(
                 "Assistant",
-                "No LLM provider configured — check ANTHROPIC_API_KEY or your Ollama settings, then restart.",
+                "No LLM provider configured — check your API key or Ollama settings, then restart.",
             )
             return
 
@@ -114,6 +160,7 @@ class AssistantGui:
         self.InputEntry.delete(0, "end")
         self.AppendChat("You", UserText)
         self.SetStatus("Thinking...")
+        self.Map.PulseThinking()
         threading.Thread(target=self.RunRequest, args=(UserText,), daemon=True).start()
 
     def RunRequest(self, UserText):
@@ -166,7 +213,8 @@ class AssistantGui:
 
 
 def Main():
-    Root = tk.Tk()
+    ctk.set_appearance_mode("dark")
+    Root = ctk.CTk()
     Root.withdraw()  # hide the main window until setup (if needed) is done
 
     def LaunchAssistant():
