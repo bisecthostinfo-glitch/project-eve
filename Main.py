@@ -1,17 +1,13 @@
 import os
-from Config import LoadConfig, AppDir
+from Config import LoadConfig
 from Logger import ActionLogger
 from AgentLoop import AgentLoop
 from Tools.CalendarLookup import CalendarLookup
 from Tools.CalendarCreateEvent import CalendarCreateEvent
 from Tools.FileSearch import FileSearch
 from Tools.FileManager import FileManager
-from Tools.DriveSearch import DriveSearch
-from Tools.SheetsAccess import SheetsAccess
-from Tools.GmailAccess import GmailAccess
 from Providers.AnthropicProvider import AnthropicProvider
 from Providers.OllamaProvider import OllamaProvider
-from GoogleAuth import GoogleAuth
 
 
 def BuildProvider(ConfigDict):
@@ -33,45 +29,19 @@ def BuildProvider(ConfigDict):
 
 def BuildToolRegistry(ConfigDict):
     Registry = {}
-    Flags = ConfigDict["ToolFlags"]
 
-    GoogleToolsRequested = any(
-        Flags.get(Name) for Name in ("CalendarLookup", "CalendarCreateEvent", "DriveSearch", "SheetsAccess", "GmailAccess")
-    )
-    GoogleCredentials = None
-    if GoogleToolsRequested:
-        try:
-            GoogleCredentials = GoogleAuth(AppDir).GetCredentials()
-        except FileNotFoundError as ErrorObject:
-            print(f"Google tools disabled: {ErrorObject}")
+    if ConfigDict["ToolFlags"].get("CalendarLookup"):
+        Registry["CalendarLookup"] = CalendarLookup()
 
-    if Flags.get("CalendarLookup"):
-        Registry["CalendarLookup"] = CalendarLookup(CalendarService=None)
-        if GoogleCredentials:
-            from googleapiclient.discovery import build
-            Registry["CalendarLookup"].CalendarService = build("calendar", "v3", credentials=GoogleCredentials)
+    if ConfigDict["ToolFlags"].get("CalendarCreateEvent"):
+        Registry["CalendarCreateEvent"] = CalendarCreateEvent()
 
-    if Flags.get("CalendarCreateEvent"):
-        Registry["CalendarCreateEvent"] = CalendarCreateEvent(CalendarService=None)
-        if GoogleCredentials:
-            from googleapiclient.discovery import build
-            Registry["CalendarCreateEvent"].CalendarService = build("calendar", "v3", credentials=GoogleCredentials)
-
-    if Flags.get("FileSearch"):
+    if ConfigDict["ToolFlags"].get("FileSearch"):
         SearchTool = FileSearch(ConfigDict["FileIndexPath"], ConfigDict["ScopedDirectories"])
         Registry["FileSearch"] = SearchTool
 
-    if Flags.get("FileManager"):
+    if ConfigDict["ToolFlags"].get("FileManager"):
         Registry["FileManager"] = FileManager(ConfigDict["ScopedDirectories"])
-
-    if Flags.get("DriveSearch") and GoogleCredentials:
-        Registry["DriveSearch"] = DriveSearch(GoogleCredentials, FileIndexPath=ConfigDict["FileIndexPath"])
-
-    if Flags.get("SheetsAccess") and GoogleCredentials:
-        Registry["SheetsAccess"] = SheetsAccess(GoogleCredentials)
-
-    if Flags.get("GmailAccess") and GoogleCredentials:
-        Registry["GmailAccess"] = GmailAccess(GoogleCredentials)
 
     return Registry
 
@@ -94,7 +64,6 @@ def Main():
         ToolRegistry=ToolRegistry,
         ActionLogger=ActionLoggerInstance,
         MaxToolCalls=ConfigDict["MaxToolCallsPerRequest"],
-        SystemPrompt=ConfigDict["SystemPrompt"],
     )
 
     print("Personal Assistant (Milestone 1 — text mode). Type 'exit' to quit.")
@@ -109,14 +78,9 @@ def Main():
             print(f"Assistant: {LastAction}")
             continue
 
-        try:
-            Result = Loop.HandleRequest(UserInput, ConversationHistory)
-        except Exception as ErrorObject:
-            print(f"Assistant: Something went wrong talking to the model — {ErrorObject}")
-            continue
-
+        Result = Loop.HandleRequest(UserInput, ConversationHistory)
         ConversationHistory = Result["Messages"]
-        print(f"Assistant: {Result['FinalResponse'] or '(no response text — check StepLog / logs)'}")
+        print(f"Assistant: {Result['FinalResponse']}")
 
 
 if __name__ == "__main__":
